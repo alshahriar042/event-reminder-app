@@ -2,14 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Event;
-use App\Models\EventParticipant;
 use App\Mail\EventReminder;
-use Illuminate\Http\Request;
+use App\Services\EventService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Requests\StoreEventRequest;
+use App\Http\Requests\UpdateEventRequest;
 
 class EventController extends Controller
 {
+    protected $service;
+
+    public function __construct(EventService $service)
+    {
+        $this->service = $service;
+    }
+
     public function dashboard()
     {
         $upcoming = Event::where('user_id', auth()->id())
@@ -39,33 +49,15 @@ class EventController extends Controller
 
     public function create()
     {
-        return view('events.create');
+        $users = User::where('email', '!=', Auth::user()->email)
+            ->select('name', 'email')
+            ->get();
+        return view('events.create', compact('users'));
     }
 
-    public function store(Request $request)
+    public function store(StoreEventRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
-            'reminder_minutes_before' => 'nullable|integer|min:1',
-            'participants' => 'required|array|min:1',
-            'participants.*' => 'required|email',
-        ]);
-
-        $event = Event::create([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'reminder_minutes_before' => $validated['reminder_minutes_before'],
-            'user_id' => auth()->id(),
-        ]);
-
-        foreach ($validated['participants'] as $email) {
-            $event->participants()->create(['email' => $email]);
-        }
+        $event = $this->service->create($request->validated());
 
         return redirect()->route('events.show', $event)
             ->with('success', 'Event created successfully!');
@@ -78,31 +70,16 @@ class EventController extends Controller
 
     public function edit(Event $event)
     {
+        $users = User::where('email', '!=', Auth::user()->email)
+            ->select('name', 'email')
+            ->get();
 
-        return view('events.edit', compact('event'));
+        return view('events.create', compact('event', 'users'));
     }
 
-    public function update(Request $request, Event $event)
+    public function update(UpdateEventRequest $request, Event $event)
     {
-
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
-            'reminder_minutes_before' => 'nullable|integer|min:1',
-            'participants' => 'required|array|min:1',
-            'participants.*' => 'required|email',
-        ]);
-
-        $event->update($validated);
-
-        // Sync participants
-        $event->participants()->delete();
-        foreach ($validated['participants'] as $email) {
-            $event->participants()->create(['email' => $email]);
-        }
+        $this->service->update($event, $request->validated());
 
         return redirect()->route('events.show', $event)
             ->with('success', 'Event updated successfully!');
@@ -110,8 +87,8 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
-
         $event->delete();
+
         return redirect()->route('events.index')
             ->with('success', 'Event deleted successfully!');
     }
@@ -140,12 +117,12 @@ class EventController extends Controller
     public function markComplete(Event $event)
     {
         $event->update(['is_completed' => true]);
+
         return back()->with('success', 'Event marked as completed!');
     }
 
     public function sendReminder(Event $event)
     {
-
         foreach ($event->participants as $participant) {
             Mail::to($participant->email)->send(new EventReminder($event));
             $participant->update(['reminder_sent' => true, 'reminder_sent_at' => now()]);
