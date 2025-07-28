@@ -31,6 +31,7 @@
 # Clone the project and move to the directory
 git clone https://github.com/alshahriar042/event-reminder-app.git
 cd event-reminder-app
+git checkout development
 
 # Copy environment file and install PHP dependencies
 cp .env.example .env
