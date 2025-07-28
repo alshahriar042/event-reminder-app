@@ -1,0 +1,4 @@
+﻿title,description,start_time,end_time,reminder_minutes_before,participants,
+Team Meeting,Weekly sync,01/12/2025 10:00,01/12/2025 11:00,15,"member1@example.com,member2@example.com",
+Client Call,Project discussion,02/12/2025 14:00,02/12/2025 15:00,30,client@example.com,
+Birthday Party,Class,05/12/2025 19:00,05/12/2025 23:00,5,"friend1@example.com,friend2@example.com,friend3@example.com",

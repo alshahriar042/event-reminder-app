@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use League\Csv\Reader;
 use Illuminate\Http\Request;
-use App\Models\EventParticipant;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
