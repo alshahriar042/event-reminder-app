@@ -47,5 +47,11 @@ php artisan migrate:fresh
 #run application 
 php artisan serve
 
+# Run the scheduler (recommended to use in a separate terminal or supervisor in production)
+php artisan schedule:work
 
+# Run the queue worker (recommended to use in a separate terminal or supervisor in production)
+php artisan queue:work
 
+# Create a cron job to run the scheduler every minute
+* * * * * cd /path-to-your-project && php artisan schedule:run >> /dev/null 2>&1
